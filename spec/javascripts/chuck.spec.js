@@ -24,6 +24,11 @@ describe('Chuck', function(){
       assert.equal(sut.timeout, 5000);
     });
 
+    it('should have custom timeout', function() {
+      var sut = chuck('testing', { timeout: 2400 });
+      assert.equal(sut.timeout, 2400);
+    });
+
   });
 
   describe('#log()', function(){
@@ -31,6 +36,35 @@ describe('Chuck', function(){
     it('should log event', function() {
       var sut = chuck('testing');
       sut.log('voice', { event: 'something' });
+    });
+
+  });
+
+  describe('#debug()', function(){
+
+    beforeEach(function() {
+      sinon.spy(console, 'error');
+    });
+
+    afterEach(function() {
+      console.error.restore();
+    });
+
+    it('should log event with console.error.apply', function() {
+      var sut = chuck('testing');
+      sut.debug();
+      sut.log('voice', { event: 'something' });
+
+      sinon.assert.calledOnce(console.error);
+    });
+
+    it('should log event with console.error', function() {
+      console.error.apply = null;
+      var sut = chuck('testing');
+      sut.debug();
+      sut.log('voice', { event: 'something' });
+
+      sinon.assert.calledOnce(console.error);
     });
 
   });
