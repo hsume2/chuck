@@ -7,4 +7,9 @@ clean:
 test:
 	@./node_modules/.bin/mocha -r spec/javascripts/common.js --ui bdd spec/javascripts/*.spec.js
 
-.PHONY: chuck.js clean test
+coverage:
+	jscoverage --no-highlight lib lib-cov
+	CHUCK_COV=1 ./node_modules/.bin/mocha -r spec/javascripts/common.js --ui bdd -R html-cov spec/javascripts/*.spec.js > coverage.html
+	rm -rf lib-cov
+
+.PHONY: chuck.js clean test coverage

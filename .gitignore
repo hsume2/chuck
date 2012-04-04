@@ -53,3 +53,6 @@ node_modules
 
 # For rvm:
 .rvmrc
+
+# jscoverage
+coverage.html
