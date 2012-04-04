@@ -40,7 +40,7 @@ describe('Chuck', function(){
 
   });
 
-  describe('#debug()', function(){
+  describe('.debug()', function(){
 
     beforeEach(function() {
       sinon.spy(console, 'error');
@@ -50,21 +50,65 @@ describe('Chuck', function(){
       console.error.restore();
     });
 
-    it('should log event with console.error.apply', function() {
+    it('should print with console.error.apply', function() {
       var sut = chuck('testing');
-      sut.debug();
+      chuck.debug('testing');
       sut.log('voice', { event: 'something' });
 
       sinon.assert.calledOnce(console.error);
     });
 
-    it('should log event with console.error', function() {
+    it('should print with console.error', function() {
       console.error.apply = null;
       var sut = chuck('testing');
-      sut.debug();
+      chuck.debug('testing');
       sut.log('voice', { event: 'something' });
 
       sinon.assert.calledOnce(console.error);
+    });
+
+    it('should print loggers matching: a', function() {
+      var sut1 = chuck('a');
+      var sut2 = chuck('b');
+      chuck.debug('a');
+
+      sut1.log('voice', { event: 'something' });
+      sut2.log('voice', { event: 'something' });
+
+      sinon.assert.calledOnce(console.error);
+    });
+
+    it('should print loggers matching: ^too$', function() {
+      var sut1 = chuck('too');
+      var sut2 = chuck('tooo');
+      chuck.debug('tooo');
+
+      sut1.log('voice', { event: 'something' });
+      sut2.log('voice', { event: 'something' });
+
+      sinon.assert.calledOnce(console.error);
+    });
+
+    it('should print loggers matching: a|b', function() {
+      var sut1 = chuck('a');
+      var sut2 = chuck('b');
+      chuck.debug('a,b');
+
+      sut1.log('voice', { event: 'something' });
+      sut2.log('voice', { event: 'something' });
+
+      sinon.assert.calledTwice(console.error);
+    });
+
+    it('should print loggers matching: c', function() {
+      var sut1 = chuck('a');
+      var sut2 = chuck('b');
+      chuck.debug('c');
+
+      sut1.log('voice', { event: 'something' });
+      sut2.log('voice', { event: 'something' });
+
+      sinon.assert.notCalled(console.error);
     });
 
   });

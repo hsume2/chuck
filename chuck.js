@@ -140,10 +140,6 @@ module.exports = (function() {
       this.trigger();
     };
 
-    Chuck.prototype.debug = function() {
-      this._debug = true;
-    };
-
     Chuck.prototype.print = function() {
       if (typeof console === 'undefined') return;
       if (console.error && console.error.apply) {
@@ -164,7 +160,7 @@ module.exports = (function() {
     };
 
     Chuck.prototype.enqueue = function(scope, properties) {
-      if(this._debug) {
+      if(chucker.match(this.level)) {
         var fmt = '[' + new Date().toUTCString()
           + ' ' + this.level + '] (' + scope + ')';
         this.print(fmt, properties);
@@ -254,9 +250,23 @@ module.exports = (function() {
 
   }());
 
-  return function(level, options) {
+  var chucker = function(level, options) {
     return new Chuck(level, options);
   };
+
+  chucker.debug = function(flag) {
+    var flags = [];
+    flag.split(',').forEach(function(part) {
+      flags.push(part.trim());
+    });
+    this._debug = new RegExp('^(' + flags.join('|') + ')$');
+  };
+
+  chucker.match = function(scope) {
+    return this._debug && this._debug.exec(scope);
+  };
+
+  return chucker;
 
 }());
 
