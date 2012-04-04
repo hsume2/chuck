@@ -133,7 +133,8 @@ describe('Chuck', function(){
         scope: 'voice',
         properties: {
           event: 'something'
-        }
+        },
+        ts: 0
       }]);
     });
 
@@ -157,7 +158,8 @@ describe('Chuck', function(){
         scope: 'voice',
         properties: {
           event: 'something'
-        }
+        },
+        ts: 0
       }]);
     });
 
@@ -165,30 +167,36 @@ describe('Chuck', function(){
       var sut = chuck('testing');
       var spy = sinon.spy(sut, 'send');
       var times = Math.round(Math.random(7) * 10) + 3;
+      var timestamps = [];
 
       sinon.assert.notCalled(spy);
 
       for(var i = 1; i <= times; i++) {
         sut.log('voice', { event: 'something' });
         sut.log('voice', { event: 'something' });
+        timestamps.push((new Date()).valueOf());
         this.clock.tick(sut.timeout);
         sinon.assert.callCount(spy, i);
       };
 
-      sinon.assert.calledWith(spy, [
-        {
-          scope: 'voice',
-          properties: {
-            event: 'something'
+      timestamps.forEach(function(ts) {
+        sinon.assert.calledWith(spy, [
+          {
+            scope: 'voice',
+            properties: {
+              event: 'something'
+            },
+            ts: ts
+          },
+          {
+            scope: 'voice',
+            properties: {
+              event: 'something'
+            },
+            ts: ts
           }
-        },
-        {
-          scope: 'voice',
-          properties: {
-            event: 'something'
-          }
-        }
-      ]);
+        ]);
+      });
     });
 
   });
@@ -248,13 +256,15 @@ describe('Chuck', function(){
               scope: 'a',
               properties: {
                 event: '1'
-              }
+              },
+              ts: 0
             },
             {
               scope: 'b',
               properties: {
                 event: '2'
-              }
+              },
+              ts: 0
             }
             ]
           }),
@@ -322,13 +332,15 @@ describe('Chuck', function(){
                 scope: 'a',
                 properties: {
                   event: '1'
-                }
+                },
+                ts: 0
               },
               {
                 scope: 'b',
                 properties: {
                   event: '2'
-                }
+                },
+                ts: 0
               }
             ]
           }));

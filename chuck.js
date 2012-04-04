@@ -168,7 +168,8 @@ module.exports = (function() {
 
       this.queue().push({
         scope: scope,
-        properties: properties
+        properties: properties,
+        ts: (new Date()).valueOf()
       });
     };
 

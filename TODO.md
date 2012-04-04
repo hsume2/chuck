@@ -1,1 +1,0 @@
-* Include timestamp to event
