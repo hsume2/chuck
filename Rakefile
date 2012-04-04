@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "chuck"
   gem.homepage = "http://github.com/hsume2/chuck"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{Client-side logger}
+  gem.description = %Q{Client-side logger}
   gem.email = "hhsu@zendesk.com"
   gem.authors = ["Henry Hsu"]
   # dependencies defined in Gemfile

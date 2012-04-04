@@ -1,5 +1,5 @@
 chuck.js:
-	@./node_modules/.bin/browserbuild -m chuck -g chuck -d --basepath lib/ lib/chuck.js > chuck.js
+	@./node_modules/.bin/browserbuild -m chuck -g chuck --basepath lib/ lib/chuck.js > chuck.js
 
 clean:
 	@rm -f chuck.js
