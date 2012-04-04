@@ -17,6 +17,15 @@ describe('Chuck', function(){
     this.sandbox.restore();
   });
 
+  describe('#timeout', function(){
+
+    it('should have timeout', function() {
+      var sut = chuck('testing');
+      assert.equal(sut.timeout, 5000);
+    });
+
+  });
+
   describe('#log()', function(){
 
     it('should log event', function() {
@@ -37,8 +46,10 @@ describe('Chuck', function(){
       sut.log('voice', { event: 'something' });
 
       sinon.assert.notCalled(spy);
+      this.clock.tick(sut.timeout / 2);
+      sinon.assert.notCalled(spy);
 
-      this.clock.tick(510);
+      this.clock.tick(sut.timeout / 2);
 
       sinon.assert.calledWith(spy, [{
         scope: 'voice',
@@ -60,7 +71,7 @@ describe('Chuck', function(){
       sinon.assert.notCalled(spy);
 
       for(var i = 1; i <= times; i++) {
-        this.clock.tick(501);
+        this.clock.tick(sut.timeout);
         sinon.assert.calledOnce(spy);
       };
 
@@ -81,11 +92,18 @@ describe('Chuck', function(){
 
       for(var i = 1; i <= times; i++) {
         sut.log('voice', { event: 'something' });
-        this.clock.tick(501);
+        sut.log('voice', { event: 'something' });
+        this.clock.tick(sut.timeout);
         sinon.assert.callCount(spy, i);
       };
 
       sinon.assert.calledWith(spy, [
+        {
+          scope: 'voice',
+          properties: {
+            event: 'something'
+          }
+        },
         {
           scope: 'voice',
           properties: {
@@ -99,6 +117,22 @@ describe('Chuck', function(){
 
   if(typeof window !== 'undefined') {
 
+    describe('#adapter', function(){
+
+      it('should have adapter', function() {
+        var sut = chuck('testing');
+        assert.isObject(sut.adapter);
+        assert.equal(sut.adapter.jQuery, jQuery);
+      });
+
+      it('should create chuck with options', function() {
+        var fakeQuery = sinon.stub();
+        var sut = chuck('testing', { jQuery: fakeQuery });
+        assert.equal(sut.adapter.jQuery, fakeQuery);
+      });
+
+    });
+
     describe('#send()', function(){
 
       it('should POST to API end-point', function() {
@@ -107,7 +141,7 @@ describe('Chuck', function(){
         sut.log('a', { event: '1' });
         sut.log('b', { event: '2' });
 
-        this.clock.tick(501);
+        this.clock.tick(sut.timeout);
 
         assert.length(this.sandbox.server.requests, 1);
 
@@ -118,23 +152,36 @@ describe('Chuck', function(){
         assert.equal(request.async, true);
 
         assert.equal(request.requestHeaders['Content-Type'], 'application/json;charset=utf-8');
-        assert.equal(request.requestHeaders['Accept'], '*/*');
+        assert.equal(request.requestHeaders['Accept'], 'application/json, text/javascript, */*; q=0.01');
         assert.equal(request.requestHeaders['X-Requested-With'], 'XMLHttpRequest');
 
-        assert.equal(request.requestBody, JSON.stringify([
-          {
-            scope: 'a',
-            properties: {
-              event: '1'
+        assert.equal(request.requestBody, JSON.stringify({
+          payload: [
+            {
+              scope: 'a',
+              properties: {
+                event: '1'
+              }
+            },
+            {
+              scope: 'b',
+              properties: {
+                event: '2'
+              }
             }
-          },
-          {
-            scope: 'b',
-            properties: {
-              event: '2'
-            }
-          }
-        ]));
+          ]
+        }));
+      });
+
+    });
+
+  } else {
+
+    describe('#adapter', function(){
+
+      it('should have adapter', function() {
+        var sut = chuck('testing');
+        assert.isObject(sut.adapter);
       });
 
     });
