@@ -1,6 +1,6 @@
-if(!chai) {
-  var chai = require('chai');
-}
+if(!chuck) { var chuck = require('../../index'); };
+if(!sinon) { var sinon = require('sinon'); };
+if(!chai) { var chai = require('chai'); };
 
 var assert = chai.assert;
 
