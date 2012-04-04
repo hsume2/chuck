@@ -1,0 +1,15 @@
+{
+  "name": "chuck",
+  "version": "0.0.1",
+  "description": "Client-side logger",
+  "author": "Henry Hsu <hhsu@zendesk.com>",
+  "main": "./index.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "mocha": "1.0.x",
+    "chai": "0.5.x",
+    "sinon": "1"
+  },
+  "engine": "node >= 0.4.111"
+}
