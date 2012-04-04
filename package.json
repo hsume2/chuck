@@ -9,7 +9,8 @@
   "devDependencies": {
     "mocha": "1.0.x",
     "chai": "0.5.x",
-    "sinon": "1"
+    "sinon": "1",
+    "browserbuild": "*"
   },
   "engine": "node >= 0.4.111"
 }
