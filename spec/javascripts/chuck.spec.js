@@ -281,7 +281,7 @@ describe('Chuck', function(){
           }),
           dataType: "json",
           type: "POST",
-          url: "/chuck"
+          url: "/chuck/testing"
         }).once();
         var sut = chuck('testing', { jQuery: fakeQuery });
 
@@ -329,7 +329,7 @@ describe('Chuck', function(){
 
           var request = this.sandbox.server.requests[0];
 
-          assert.equal(request.url, '/chuck');
+          assert.equal(request.url, '/chuck/testing');
           assert.equal(request.method, 'POST');
           assert.equal(request.async, true);
 

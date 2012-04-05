@@ -87,7 +87,7 @@ module.exports = (function() {
 
     Chuck.prototype.send = function(event) {
       if(this.adapter) {
-        this.adapter.send(event);
+        this.adapter.send(this.level, event);
       }
     };
 
@@ -102,7 +102,7 @@ module.exports = (function() {
     function Node(options) {
     }
 
-    Node.prototype.send = function(event) {
+    Node.prototype.send = function(level, event) {
     };
 
     return Node;
@@ -116,9 +116,9 @@ module.exports = (function() {
       this.jQuery = options.jQuery || window.jQuery;
     }
 
-    Browser.prototype.send = function(event) {
+    Browser.prototype.send = function(level, event) {
       this.jQuery.ajax({
-        url: '/chuck',
+        url: '/chuck/' + level,
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ payload: event }),
