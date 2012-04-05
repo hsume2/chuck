@@ -11,6 +11,7 @@ describe('Chuck', function(){
     this.sandbox.useFakeServer();
     this.sandbox.useFakeTimers();
     this.clock = this.sandbox.clock;
+    chuck.reset();
   });
 
   afterEach(function() {
@@ -35,7 +36,7 @@ describe('Chuck', function(){
 
     it('should log event', function() {
       var sut = chuck('testing');
-      sut.log('voice', { event: 'something' });
+      sut.log({ event: 'something' });
     });
 
   });
@@ -53,18 +54,30 @@ describe('Chuck', function(){
     it('should print with console.error.apply', function() {
       var sut = chuck('testing');
       chuck.debug('testing');
-      sut.log('voice', { event: 'something' });
+      sut.log({ event: 'something' });
 
       sinon.assert.calledOnce(console.error);
+      sinon.assert.calledWith(console.error, "[Thu, 01 Jan 1970 00:00:00 GMT testing]", { event: 'something' });
     });
 
     it('should print with console.error', function() {
       console.error.apply = null;
       var sut = chuck('testing');
       chuck.debug('testing');
-      sut.log('voice', { event: 'something' });
+      sut.log({ event: 'something' });
 
       sinon.assert.calledOnce(console.error);
+      sinon.assert.calledWith(console.error, "[Thu, 01 Jan 1970 00:00:00 GMT testing] {\"event\":\"something\"}");
+    });
+
+    it('should print stringified', function() {
+      var sut = chuck('testing');
+      chuck.debug('testing');
+      chuck.stringify(true);
+      sut.log({ event: 'something' });
+
+      sinon.assert.calledOnce(console.error);
+      sinon.assert.calledWith(console.error, "[Thu, 01 Jan 1970 00:00:00 GMT testing] {\"event\":\"something\"}");
     });
 
     it('should print loggers matching: a', function() {
@@ -72,8 +85,8 @@ describe('Chuck', function(){
       var sut2 = chuck('b');
       chuck.debug('a');
 
-      sut1.log('voice', { event: 'something' });
-      sut2.log('voice', { event: 'something' });
+      sut1.log({ event: 'something' });
+      sut2.log({ event: 'something' });
 
       sinon.assert.calledOnce(console.error);
     });
@@ -83,8 +96,8 @@ describe('Chuck', function(){
       var sut2 = chuck('tooo');
       chuck.debug('tooo');
 
-      sut1.log('voice', { event: 'something' });
-      sut2.log('voice', { event: 'something' });
+      sut1.log({ event: 'something' });
+      sut2.log({ event: 'something' });
 
       sinon.assert.calledOnce(console.error);
     });
@@ -94,8 +107,8 @@ describe('Chuck', function(){
       var sut2 = chuck('b');
       chuck.debug('a,b');
 
-      sut1.log('voice', { event: 'something' });
-      sut2.log('voice', { event: 'something' });
+      sut1.log({ event: 'something' });
+      sut2.log({ event: 'something' });
 
       sinon.assert.calledTwice(console.error);
     });
@@ -105,8 +118,20 @@ describe('Chuck', function(){
       var sut2 = chuck('b');
       chuck.debug('c');
 
-      sut1.log('voice', { event: 'something' });
-      sut2.log('voice', { event: 'something' });
+      sut1.log({ event: 'something' });
+      sut2.log({ event: 'something' });
+
+      sinon.assert.notCalled(console.error);
+    });
+
+    it('should turn off printing', function() {
+      var sut1 = chuck('a');
+      var sut2 = chuck('b');
+      chuck.debug('a,b');
+      chuck.debug(false);
+
+      sut1.log({ event: 'something' });
+      sut2.log({ event: 'something' });
 
       sinon.assert.notCalled(console.error);
     });
@@ -121,7 +146,7 @@ describe('Chuck', function(){
 
       sinon.assert.notCalled(spy);
 
-      sut.log('voice', { event: 'something' });
+      sut.log({ event: 'something' });
 
       sinon.assert.notCalled(spy);
       this.clock.tick(sut.timeout / 2);
@@ -130,11 +155,9 @@ describe('Chuck', function(){
       this.clock.tick(sut.timeout / 2);
 
       sinon.assert.calledWith(spy, [{
-        scope: 'voice',
-        properties: {
+        0: {
           event: 'something'
-        },
-        ts: 0
+        }
       }]);
     });
 
@@ -145,7 +168,7 @@ describe('Chuck', function(){
 
       sinon.assert.notCalled(spy);
 
-      sut.log('voice', { event: 'something' });
+      sut.log({ event: 'something' });
 
       sinon.assert.notCalled(spy);
 
@@ -155,11 +178,9 @@ describe('Chuck', function(){
       };
 
       sinon.assert.calledWith(spy, [{
-        scope: 'voice',
-        properties: {
+        0: {
           event: 'something'
-        },
-        ts: 0
+        }
       }]);
     });
 
@@ -172,30 +193,24 @@ describe('Chuck', function(){
       sinon.assert.notCalled(spy);
 
       for(var i = 1; i <= times; i++) {
-        sut.log('voice', { event: 'something' });
-        sut.log('voice', { event: 'something' });
+        sut.log({ event: 'a' });
+        sut.log({ event: 'b' });
         timestamps.push((new Date()).valueOf());
         this.clock.tick(sut.timeout);
         sinon.assert.callCount(spy, i);
       };
 
       timestamps.forEach(function(ts) {
-        sinon.assert.calledWith(spy, [
-          {
-            scope: 'voice',
-            properties: {
-              event: 'something'
-            },
-            ts: ts
-          },
-          {
-            scope: 'voice',
-            properties: {
-              event: 'something'
-            },
-            ts: ts
-          }
-        ]);
+        var message1 = {};
+        message1[ts] = {
+          event: 'a'
+        };
+        var message2 = {};
+        message2[ts] = {
+          event: 'b'
+        };
+
+        sinon.assert.calledWith(spy, [message1, message2]);
       });
     });
 
@@ -252,20 +267,16 @@ describe('Chuck', function(){
           contentType: "application/json",
           data: JSON.stringify({
             payload: [
-            {
-              scope: 'a',
-              properties: {
-                event: '1'
+              {
+                0: {
+                  event: '1'
+                }
               },
-              ts: 0
-            },
-            {
-              scope: 'b',
-              properties: {
-                event: '2'
-              },
-              ts: 0
-            }
+              {
+                0: {
+                  event: '2'
+                }
+              }
             ]
           }),
           dataType: "json",
@@ -274,8 +285,8 @@ describe('Chuck', function(){
         }).once();
         var sut = chuck('testing', { jQuery: fakeQuery });
 
-        sut.log('a', { event: '1' });
-        sut.log('b', { event: '2' });
+        sut.log({ event: '1' });
+        sut.log({ event: '2' });
 
         this.clock.tick(sut.timeout);
 
@@ -309,8 +320,8 @@ describe('Chuck', function(){
         it('should POST to API end-point', function() {
           var sut = chuck('testing');
 
-          sut.log('a', { event: '1' });
-          sut.log('b', { event: '2' });
+          sut.log({ event: '1' });
+          sut.log({ event: '2' });
 
           this.clock.tick(sut.timeout);
 
@@ -329,18 +340,14 @@ describe('Chuck', function(){
           assert.equal(request.requestBody, JSON.stringify({
             payload: [
               {
-                scope: 'a',
-                properties: {
+                0: {
                   event: '1'
-                },
-                ts: 0
+                }
               },
               {
-                scope: 'b',
-                properties: {
+                0: {
                   event: '2'
-                },
-                ts: 0
+                }
               }
             ]
           }));

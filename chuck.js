@@ -14,20 +14,20 @@ module.exports = (function() {
       }
     }
 
-    Chuck.prototype.log = function(scope, properties) {
-      this.enqueue(scope, properties);
+    Chuck.prototype.log = function(properties) {
+      this.enqueue(properties);
       this.trigger();
     };
 
     Chuck.prototype.print = function() {
       if (typeof console === 'undefined') return;
-      if (console.error && console.error.apply) {
+      var args = Array.prototype.slice.call(arguments);
+      if (console.error && console.error.apply && !chucker._stringify) {
         // console.error.apply is undefined in IE8 and IE9
         // and still useless for objects in IE9. But useful for non-IE browsers.
-        return console.error.apply(console, arguments);
+        return console.error.apply(console, args);
       }
       // for IE8/9: make console.error at least a bit less awful
-      var args = Array.prototype.slice.call(arguments);
       args.forEach(function(element, index) {
         if(typeof element === 'string') {
           args[index] = element;
@@ -38,18 +38,18 @@ module.exports = (function() {
       console.error && console.error(args.join(' '));
     };
 
-    Chuck.prototype.enqueue = function(scope, properties) {
+    Chuck.prototype.enqueue = function(properties) {
       if(chucker.match(this.level)) {
         var fmt = '[' + new Date().toUTCString()
-          + ' ' + this.level + '] (' + scope + ')';
+          + ' ' + this.level + ']';
         this.print(fmt, properties);
       }
 
-      this.queue().push({
-        scope: scope,
-        properties: properties,
-        ts: (new Date()).valueOf()
-      });
+      var message = {};
+      var ts = (new Date()).valueOf();
+      message[ts] = properties;
+
+      this.queue().push(message);
     };
 
     Chuck.prototype.queue = function() {
@@ -134,7 +134,12 @@ module.exports = (function() {
     return new Chuck(level, options);
   };
 
-  chucker.debug = function(flag) {
+  chucker.debug = function(flag, options) {
+    options = options || {};
+    if(!flag) {
+      this._debug = false;
+      return;
+    }
     var flags = [];
     flag.split(',').forEach(function(part) {
       flags.push(part.trim());
@@ -142,8 +147,17 @@ module.exports = (function() {
     this._debug = new RegExp('^(' + flags.join('|') + ')$');
   };
 
-  chucker.match = function(scope) {
-    return this._debug && this._debug.exec(scope);
+  chucker.stringify = function(flag) {
+    this._stringify = !!flag;
+  };
+
+  chucker.reset = function() {
+    this.debug(false);
+    this.stringify(false);
+  };
+
+  chucker.match = function(level) {
+    return this._debug && this._debug.exec(level);
   };
 
   return chucker;
