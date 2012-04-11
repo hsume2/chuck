@@ -45,9 +45,10 @@ module.exports = (function() {
         this.print(fmt, properties);
       }
 
-      var message = {};
-      var ts = (new Date()).valueOf();
-      message[ts] = properties;
+      var message = {
+        ts: (new Date()).valueOf(),
+        log: properties
+      };
 
       this.queue().push(message);
     };

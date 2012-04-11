@@ -155,9 +155,8 @@ describe('Chuck', function(){
       this.clock.tick(sut.timeout / 2);
 
       sinon.assert.calledWith(spy, [{
-        0: {
-          event: 'something'
-        }
+        log: { event: 'something' },
+        ts: 0
       }]);
     });
 
@@ -178,9 +177,8 @@ describe('Chuck', function(){
       };
 
       sinon.assert.calledWith(spy, [{
-        0: {
-          event: 'something'
-        }
+        log: { event: 'something' },
+        ts: 0
       }]);
     });
 
@@ -201,16 +199,16 @@ describe('Chuck', function(){
       };
 
       timestamps.forEach(function(ts) {
-        var message1 = {};
-        message1[ts] = {
-          event: 'a'
-        };
-        var message2 = {};
-        message2[ts] = {
-          event: 'b'
-        };
-
-        sinon.assert.calledWith(spy, [message1, message2]);
+        sinon.assert.calledWith(spy, [
+          {
+            log: { event: 'a' },
+            ts: ts
+          },
+          {
+            log: { event: 'b' },
+            ts: ts
+          }
+        ]);
       });
     });
 
@@ -268,14 +266,12 @@ describe('Chuck', function(){
           data: JSON.stringify({
             payload: [
               {
-                0: {
-                  event: '1'
-                }
+                ts: 0,
+                log: { event: '1' }
               },
               {
-                0: {
-                  event: '2'
-                }
+                ts: 0,
+                log: { event: '2' }
               }
             ]
           }),
@@ -340,14 +336,12 @@ describe('Chuck', function(){
           assert.equal(request.requestBody, JSON.stringify({
             payload: [
               {
-                0: {
-                  event: '1'
-                }
+                ts: 0,
+                log: { event: '1' }
               },
               {
-                0: {
-                  event: '2'
-                }
+                ts: 0,
+                log: { event: '2' }
               }
             ]
           }));
