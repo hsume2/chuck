@@ -273,11 +273,12 @@ describe('Chuck', function(){
                 ts: 0,
                 log: { event: '2' }
               }
-            ]
+            ],
+            type: 'testing'
           }),
           dataType: "json",
           type: "POST",
-          url: "/chuck/testing"
+          url: "/chuck"
         }).once();
         var sut = chuck('testing', { jQuery: fakeQuery });
 
@@ -325,7 +326,7 @@ describe('Chuck', function(){
 
           var request = this.sandbox.server.requests[0];
 
-          assert.equal(request.url, '/chuck/testing');
+          assert.equal(request.url, '/chuck');
           assert.equal(request.method, 'POST');
           assert.equal(request.async, true);
 
@@ -343,7 +344,8 @@ describe('Chuck', function(){
                 ts: 0,
                 log: { event: '2' }
               }
-            ]
+            ],
+            type: 'testing'
           }));
         });
 
