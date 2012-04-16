@@ -212,6 +212,26 @@ describe('Chuck', function(){
       });
     });
 
+    it('should flush logs despite failure', function() {
+      var sut = chuck('testing');
+      var stub = sinon.stub(sut, 'send');
+      stub.throws();
+      var times = Math.round(Math.random(7) * 10) + 3;
+      var timestamps = [];
+
+      sinon.assert.notCalled(stub);
+
+      for(var i = 1; i <= times; i++) {
+        sut.log({ event: 'a' });
+        sut.log({ event: 'b' });
+        timestamps.push((new Date()).valueOf());
+        this.clock.tick(sut.timeout);
+        sinon.assert.callCount(stub, i);
+      };
+
+      assert.length(sut.queue(), times * 2);
+    });
+
   });
 
   if(typeof window === 'undefined') {
