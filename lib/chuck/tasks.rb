@@ -2,7 +2,7 @@ namespace :assets do
   namespace :chuck do
 
     source      = File.expand_path '../../chuck.js', File.dirname(__FILE__)
-    destination = 'public/javascripts/vendor/chuck.js'
+    destination = 'public/javascripts/vendor'
 
     directory destination
 
