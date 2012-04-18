@@ -138,6 +138,19 @@ describe('Chuck', function(){
 
   });
 
+  describe('#clearQueue()', function() {
+
+    it('should clear queued events', function() {
+      var sut = chuck('testing');
+      sut.log({ event: 'something' });
+      sut.log({ event: 'something' });
+      assert.length(sut.queue(), 2);
+      sut.clearQueue();
+      assert.length(sut.queue(), 0);
+    });
+
+  });
+
   describe('#flush()', function(){
 
     it('should flush logs after timeout', function() {
@@ -157,31 +170,11 @@ describe('Chuck', function(){
       sinon.assert.calledOnce(spy);
     });
 
-    it('should continue flushing upon exception', function() {
-      var sut = chuck('testing');
-      var stub = sinon.stub(sut, '_internalFlush');
-      stub.throws();
-      var times = Math.round(Math.random(7) * 10) + 3;
-      var timestamps = [];
-
-      sinon.assert.notCalled(stub);
-
-      for(var i = 1; i <= times; i++) {
-        sut.log({ event: 'a' });
-        sut.log({ event: 'b' });
-        timestamps.push((new Date()).valueOf());
-        this.clock.tick(sut.timeout);
-        sinon.assert.callCount(stub, i);
-      };
-
-      assert.length(sut.queue(), times * 2);
-    });
-
   });
 
   describe('#_internalFlush()', function(){
 
-    it('should clear queue if flush succeeded', function() {
+    it('should send to adapter', function() {
       var sut = chuck('testing');
       var stub = sinon.stub(sut, 'send');
 
@@ -197,45 +190,20 @@ describe('Chuck', function(){
         log: { event: 'something' },
         ts: 0
       }]);
-
-      assert.length(sut.queue(), 1);
-
-      stub.callArg(1);
-
-      assert.length(sut.queue(), 0);
     });
 
-    it('should do nothing if queue is empty', function() {
+    it('should do nothing and wait for next flush if queue is empty', function() {
       var sut = chuck('testing');
-      var spy = sinon.spy(sut, 'send');
+      var send = sinon.spy(sut, 'send');
+      var flush = sinon.spy(sut, 'flush');
 
-      sinon.assert.notCalled(spy);
+      sinon.assert.notCalled(send);
+      sinon.assert.notCalled(flush);
 
       sut._internalFlush();
 
-      sinon.assert.notCalled(spy);
-
-      assert.length(sut.queue(), 0);
-    });
-
-    it('should not clear queue if flush failed', function() {
-      var sut = chuck('testing');
-      var stub = sinon.stub(sut, 'send');
-
-      sinon.assert.notCalled(stub);
-
-      sut.log({ event: 'something' });
-
-      sinon.assert.notCalled(stub);
-
-      sut._internalFlush();
-
-      sinon.assert.calledWith(stub, [{
-        log: { event: 'something' },
-        ts: 0
-      }]);
-
-      assert.length(sut.queue(), 1);
+      sinon.assert.notCalled(send);
+      sinon.assert.calledOnce(flush);
     });
 
   });
@@ -287,6 +255,10 @@ describe('Chuck', function(){
         }
 
         var fakeQuery = { ajax: function() {} };
+        var ajaxPromise = { done: function() { return ajaxPromise; }, always: function() {} };
+        var doneSpy = sinon.spy(ajaxPromise, 'done');
+        var alwaysSpy = sinon.spy(ajaxPromise, 'always');
+
         var expectation = sinon.mock(fakeQuery).expects('ajax').withArgs({
           contentType: "application/json",
           data: JSON.stringify({
@@ -305,13 +277,24 @@ describe('Chuck', function(){
           dataType: "json",
           type: "POST",
           url: "/chuck"
-        }).once();
+        }).once().returns(ajaxPromise);
         var sut = chuck('testing', { jQuery: fakeQuery });
+        var flushSpy = sinon.spy(sut, 'flush');
 
         sut.log({ event: '1' });
         sut.log({ event: '2' });
 
-        this.clock.tick(sut.timeout);
+        sut.send(sut.queue());
+
+        // Asserts successful flush clears queue
+        assert.length(sut.queue(), 2);
+        doneSpy.callArg(0);
+        assert.length(sut.queue(), 0);
+
+        // Asserts enqueue next flush
+        sinon.assert.calledOnce(flushSpy);
+        alwaysSpy.callArg(0);
+        sinon.assert.calledTwice(flushSpy);
 
         expectation.verify();
 

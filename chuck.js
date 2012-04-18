@@ -69,22 +69,16 @@ module.exports = (function() {
     Chuck.prototype.flush = function() {
       var self = this;
       setTimeout(function() {
-        try {
-          self._internalFlush();
-        } catch(e) {
-
-        }
-        self.flush();
+        self._internalFlush();
       }, this.timeout);
     };
 
     Chuck.prototype._internalFlush = function() {
-      var self = this;
       var q = this.queue();
       if(q.length > 0) {
-        this.send(q, function() {
-          self.clearQueue();
-        });
+        this.send(q);
+      } else {
+        this.flush();
       }
     };
 
@@ -96,9 +90,9 @@ module.exports = (function() {
       this.isRunning = true;
     };
 
-    Chuck.prototype.send = function(event, callback) {
+    Chuck.prototype.send = function(events) {
       if(this.adapter) {
-        this.adapter.send(this.level, event, callback);
+        this.adapter.send(this, events);
       }
     };
 
@@ -113,7 +107,7 @@ module.exports = (function() {
     function Node(options) {
     }
 
-    Node.prototype.send = function(level, event) {
+    Node.prototype.send = function(chuck, events) {
     };
 
     return Node;
@@ -127,14 +121,18 @@ module.exports = (function() {
       this.jQuery = options.jQuery || window.jQuery;
     }
 
-    Browser.prototype.send = function(level, event, callback) {
+    Browser.prototype.send = function(chuck, events) {
       this.jQuery.ajax({
         url: '/chuck',
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ payload: event, type: level }),
+        data: JSON.stringify({ payload: events, type: chuck.level }),
         dataType: 'json'
-      }).done(callback);
+      }).done(function() {
+        chuck.clearQueue();
+      }).always(function() {
+        chuck.flush();
+      });
     };
 
     return Browser;
