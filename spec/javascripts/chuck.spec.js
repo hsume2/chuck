@@ -142,7 +142,7 @@ describe('Chuck', function(){
 
     it('should flush logs after timeout', function() {
       var sut = chuck('testing');
-      var spy = sinon.spy(sut, 'send');
+      var spy = sinon.spy(sut, '_internalFlush');
 
       sinon.assert.notCalled(spy);
 
@@ -154,67 +154,12 @@ describe('Chuck', function(){
 
       this.clock.tick(sut.timeout / 2);
 
-      sinon.assert.calledWith(spy, [{
-        log: { event: 'something' },
-        ts: 0
-      }]);
+      sinon.assert.calledOnce(spy);
     });
 
-    it('should flush logs only if needed', function() {
+    it('should continue flushing upon exception', function() {
       var sut = chuck('testing');
-      var spy = sinon.spy(sut, 'send');
-      var times = Math.round(Math.random(7) * 10) + 3;
-
-      sinon.assert.notCalled(spy);
-
-      sut.log({ event: 'something' });
-
-      sinon.assert.notCalled(spy);
-
-      for(var i = 1; i <= times; i++) {
-        this.clock.tick(sut.timeout);
-        sinon.assert.calledOnce(spy);
-      };
-
-      sinon.assert.calledWith(spy, [{
-        log: { event: 'something' },
-        ts: 0
-      }]);
-    });
-
-    it('should flush logs once per interval', function() {
-      var sut = chuck('testing');
-      var spy = sinon.spy(sut, 'send');
-      var times = Math.round(Math.random(7) * 10) + 3;
-      var timestamps = [];
-
-      sinon.assert.notCalled(spy);
-
-      for(var i = 1; i <= times; i++) {
-        sut.log({ event: 'a' });
-        sut.log({ event: 'b' });
-        timestamps.push((new Date()).valueOf());
-        this.clock.tick(sut.timeout);
-        sinon.assert.callCount(spy, i);
-      };
-
-      timestamps.forEach(function(ts) {
-        sinon.assert.calledWith(spy, [
-          {
-            log: { event: 'a' },
-            ts: ts
-          },
-          {
-            log: { event: 'b' },
-            ts: ts
-          }
-        ]);
-      });
-    });
-
-    it('should flush logs despite failure', function() {
-      var sut = chuck('testing');
-      var stub = sinon.stub(sut, 'send');
+      var stub = sinon.stub(sut, '_internalFlush');
       stub.throws();
       var times = Math.round(Math.random(7) * 10) + 3;
       var timestamps = [];
@@ -230,6 +175,67 @@ describe('Chuck', function(){
       };
 
       assert.length(sut.queue(), times * 2);
+    });
+
+  });
+
+  describe('#_internalFlush()', function(){
+
+    it('should clear queue if flush succeeded', function() {
+      var sut = chuck('testing');
+      var stub = sinon.stub(sut, 'send');
+
+      sinon.assert.notCalled(stub);
+
+      sut.log({ event: 'something' });
+
+      sinon.assert.notCalled(stub);
+
+      sut._internalFlush();
+
+      sinon.assert.calledWith(stub, [{
+        log: { event: 'something' },
+        ts: 0
+      }]);
+
+      assert.length(sut.queue(), 1);
+
+      stub.callArg(1);
+
+      assert.length(sut.queue(), 0);
+    });
+
+    it('should do nothing if queue is empty', function() {
+      var sut = chuck('testing');
+      var spy = sinon.spy(sut, 'send');
+
+      sinon.assert.notCalled(spy);
+
+      sut._internalFlush();
+
+      sinon.assert.notCalled(spy);
+
+      assert.length(sut.queue(), 0);
+    });
+
+    it('should not clear queue if flush failed', function() {
+      var sut = chuck('testing');
+      var stub = sinon.stub(sut, 'send');
+
+      sinon.assert.notCalled(stub);
+
+      sut.log({ event: 'something' });
+
+      sinon.assert.notCalled(stub);
+
+      sut._internalFlush();
+
+      sinon.assert.calledWith(stub, [{
+        log: { event: 'something' },
+        ts: 0
+      }]);
+
+      assert.length(sut.queue(), 1);
     });
 
   });
@@ -367,6 +373,29 @@ describe('Chuck', function(){
             ],
             type: 'testing'
           }));
+
+          this.sandbox.server.respondWith([200, {}, '']);
+          this.sandbox.server.respond();
+
+          assert.length(sut.queue(), 0, 'Should have 0 after server responds with 200');
+        });
+
+        it('should retain logs upon API failure', function() {
+          var sut = chuck('testing');
+
+          sut.log({ event: '1' });
+          sut.log({ event: '2' });
+
+          assert.length(sut.queue(), 2);
+
+          this.clock.tick(sut.timeout);
+
+          assert.length(sut.queue(), 2, 'Should have 2 while waiting for server to respond');
+
+          this.sandbox.server.respondWith([500, {}, '']);
+          this.sandbox.server.respond();
+
+          assert.length(sut.queue(), 2, 'Should have 2 after server responds with 500');
         });
 
       });
